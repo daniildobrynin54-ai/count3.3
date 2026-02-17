@@ -46,39 +46,40 @@ export class PageFilter {
 
     static getCurrentPageType() {
         const path = location.pathname;
-        
-        // Use precompiled patterns from CONFIG
+
         for (const [type, pattern] of Object.entries(CONFIG.PAGE_PATTERNS)) {
             if (pattern.test(path)) {
                 return type;
             }
         }
-        
+
         return 'other';
     }
 
     static isCurrentPageEnabled() {
         const pageType = this.getCurrentPageType();
         const enabled = this.filters[pageType];
-        
         Logger.debug(`Page: ${pageType}, enabled: ${enabled}`);
         return enabled;
     }
 
     static getPageTypeLabel(pageType) {
         const labels = {
-            packOpening: '🎴 Открытие паков',
-            marketLots: '🏪 Маркет (главная)',
-            marketLotPage: '📦 Страница лота',
-            marketRequests: '📋 Заявки',
-            marketRequestCreate: '✍️ Создание заявки',
-            userCards: '👤 Карты пользователя',
-            userShowcase: '🏆 Витрина',
-            tradeCreatePages: '✨ Создание обмена',
-            tradePages: '🔄 Обмены',
-            deckPages: '📚 Колоды',
-            cardShowPage: '🃏 Страница карты',
-            other: '🌐 Остальное'
+            packOpening:          '🎴 Открытие паков',
+            marketLots:           '🏪 Маркет (главная)',
+            marketLotPage:        '📦 Страница лота',
+            marketRequests:       '📋 Заявки',
+            marketRequestCreate:  '✍️ Создание заявки',
+            userCards:            '👤 Карты пользователя',
+            userShowcase:         '🏆 Витрина',
+            tradeCreatePages:     '✨ Создание обмена',
+            tradePages:           '🔄 Обмены',
+            deckPages:            '📚 Колоды',
+            tradeHistory:         '📜 История обменов',
+            userMarketsHistory:   '🏷️ История лотов',
+            userMarketsRequests:  '📋 История заявок',
+            cardShowPage:         '🃏 Страница карты',
+            other:                '🌐 Остальное'
         };
         return labels[pageType] || pageType;
     }

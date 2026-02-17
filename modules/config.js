@@ -1,4 +1,4 @@
-// Configuration constants - OPTIMIZED v3.2
+// Configuration constants - OPTIMIZED v3.3
 export const CONFIG = {
     // Selectors
     CARD_SELECTORS: [
@@ -24,7 +24,8 @@ export const CONFIG = {
         '.gacha__result-card',
         '[data-pack-card]',
         '.modal-card',
-        '.popup-card'
+        '.popup-card',
+        '.history__body-item'   // Trade/market history page cards
     ],
 
     // Performance settings - OPTIMIZED
@@ -59,10 +60,10 @@ export const CONFIG = {
     ENABLED_KEY: 'mbuf_enabled',
     PAGE_FILTERS_KEY: 'mbuf_page_filters',
     RATE_LIMIT_KEY: 'mbuf_rate_limit_requests',
-    WISHLIST_KEY: 'mbuf_wishlist',  // ДОБАВЛЕНО
+    WISHLIST_KEY: 'mbuf_wishlist',
 
     // Wishlist settings
-    WISHLIST_AUTO_UPDATE_INTERVAL: 3600000, // 1 час
+    WISHLIST_AUTO_UPDATE_INTERVAL: 3600000,
     WISHLIST_DEFAULT_URL: 'https://docs.google.com/spreadsheets/d/1sYvrBU9BPhcoxTnNJfx8TOutxwFrSiRm2mw_8s6rdZM/edit?pli=1&gid=1363566974',
 
     // TTL settings (in milliseconds)
@@ -90,21 +91,27 @@ export const CONFIG = {
         tradeCreatePages: true,
         tradePages: true,
         deckPages: true,
+        tradeHistory: true,          // /users/*/trades
+        userMarketsHistory: true,    // /users/*/markets
+        userMarketsRequests: true,   // /users/*/marketsRequests
         other: true
     },
 
-    // Page type patterns
+    // Page type patterns — ORDER MATTERS (more specific patterns first)
     PAGE_PATTERNS: {
-        packOpening: /\/cards\/pack/,
-        marketRequestCreate: /\/market\/requests\/create/,
-        marketRequests: /^\/market\/requests/,
-        marketLotPage: /^\/market\/\d+/,
-        marketLots: /^\/market(?:\?|$)/,
-        userCards: /^\/users\/\d+\/cards/,
-        userShowcase: /^\/users\/\d+(?:\/showcase)?$/,
-        tradeCreatePages: /^\/trades\/offers\/\d+/,
-        tradePages: /^\/trades\/\d+/,
-        deckPages: /^\/decks\/\d+/
+        packOpening:          /\/cards\/pack/,
+        marketRequestCreate:  /\/market\/requests\/create/,
+        marketRequests:       /^\/market\/requests/,
+        marketLotPage:        /^\/market\/\d+/,
+        marketLots:           /^\/market(?:\?|$)/,
+        userCards:            /^\/users\/\d+\/cards/,
+        userShowcase:         /^\/users\/\d+(?:\/showcase)?$/,
+        tradeCreatePages:     /^\/trades\/offers\/\d+/,
+        tradePages:           /^\/trades\/\d+/,
+        deckPages:            /^\/decks\/\d+/,
+        userMarketsRequests:  /^\/users\/\d+\/marketsRequests/,  // before markets!
+        userMarketsHistory:   /^\/users\/\d+\/markets(?:\?|$)/,
+        tradeHistory:         /^\/users\/\d+\/trades|\/trades\/history/
     },
 
     // API endpoints

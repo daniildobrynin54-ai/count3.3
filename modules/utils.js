@@ -12,21 +12,15 @@ class CardIdResolver {
         this.maxCacheSize = 1000;
     }
 
-    /**
-     * Resolve card ID with automatic cache cleanup
-     */
     async resolve(idWithPrefix) {
-        // Check cache first
         if (this.cache.has(idWithPrefix)) {
             return this.cache.get(idWithPrefix);
         }
 
-        // Check if resolution is already in progress
         if (this.pending.has(idWithPrefix)) {
             return this.pending.get(idWithPrefix);
         }
 
-        // Start new resolution
         const promise = this._resolveCardId(idWithPrefix);
         this.pending.set(idWithPrefix, promise);
 
@@ -96,7 +90,6 @@ class CardIdResolver {
     }
 
     _addToCache(key, value) {
-        // Implement LRU cache behavior
         if (this.cache.size >= this.maxCacheSize) {
             const firstKey = this.cache.keys().next().value;
             this.cache.delete(firstKey);
@@ -127,6 +120,13 @@ export const DOMUtils = {
     getCardId(cardElem) {
         if (!cardElem) return null;
 
+        // ===== FIX: Special handling for trade__main-item =====
+        // These elements have data-id = instance ID, not card definition ID.
+        // We must look up the matching card in the inventory list to get data-card-id.
+        if (cardElem.classList.contains('trade__main-item')) {
+            return this._getTradeMainItemCardId(cardElem);
+        }
+
         // Special handling for requests page
         if (this._isRequestsPage()) {
             const requestId = this._getRequestId(cardElem);
@@ -145,6 +145,48 @@ export const DOMUtils = {
 
         // Standard card ID extraction
         return this._extractStandardCardId(cardElem);
+    },
+
+    /**
+     * FIX: Resolve card ID for .trade__main-item elements.
+     *
+     * The element has data-id = instance ID (e.g. 427371796).
+     * We need to find the matching .card-filter-list__card[data-id="..."]
+     * in the inventory panel and read its data-card-id attribute.
+     *
+     * Fallback chain:
+     *   1. Look up inventory card by instance ID → data-card-id
+     *   2. Try data-card-id directly on the element
+     *   3. Try img src pattern (last resort, unreliable)
+     */
+    _getTradeMainItemCardId(cardElem) {
+        const instanceId = cardElem.getAttribute('data-id');
+
+        if (instanceId) {
+            // 1. Search in both inventory panels (creator + receiver)
+            const inventoryCard = document.querySelector(
+                `.card-filter-list__card[data-id="${instanceId}"]`
+            );
+            if (inventoryCard) {
+                const cardId = inventoryCard.getAttribute('data-card-id');
+                if (cardId) {
+                    Logger.info(`trade__main-item ${instanceId} → card-id ${cardId} (from inventory)`);
+                    return cardId;
+                }
+            }
+
+            // 2. Maybe the element itself already has data-card-id (rare case)
+            const directCardId = cardElem.getAttribute('data-card-id');
+            if (directCardId) {
+                Logger.info(`trade__main-item ${instanceId} → card-id ${directCardId} (direct)`);
+                return directCardId;
+            }
+
+            Logger.warn(`trade__main-item ${instanceId}: could not resolve to card-id. ` +
+                        `Inventory card not found in DOM yet.`);
+        }
+
+        return null;
     },
 
     _isRequestsPage() {
@@ -186,7 +228,7 @@ export const DOMUtils = {
             if (match) return match[1];
         }
 
-        // Try data attributes
+        // Try data attributes — prefer data-card-id over data-id
         const dataAttrs = ['data-card-id', 'data-id', 'data-card', 'data-item-id'];
         for (const attr of dataAttrs) {
             const value = cardElem.getAttribute?.(attr);
@@ -276,9 +318,6 @@ export const DOMUtils = {
  * General utilities
  */
 export const Utils = {
-    /**
-     * Sleep with cancellation support
-     */
     sleep(ms, signal) {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(resolve, ms);
@@ -292,9 +331,6 @@ export const Utils = {
         });
     },
 
-    /**
-     * Debounce function with immediate execution option
-     */
     debounce(func, wait, immediate = false) {
         let timeout;
         return function executedFunction(...args) {
@@ -309,9 +345,6 @@ export const Utils = {
         };
     },
 
-    /**
-     * Throttle function
-     */
     throttle(func, limit) {
         let inThrottle;
         return function(...args) {
@@ -323,9 +356,6 @@ export const Utils = {
         };
     },
 
-    /**
-     * Retry with exponential backoff
-     */
     async retry(fn, options = {}) {
         const {
             maxAttempts = CONFIG.MAX_RETRIES,
@@ -357,16 +387,10 @@ export const Utils = {
         throw lastError;
     },
 
-    /**
-     * Current timestamp
-     */
     now() {
         return Date.now();
     },
 
-    /**
-     * Format number with K/M suffix
-     */
     formatNumber(num) {
         if (typeof num !== 'number' || num < 0) return num;
         if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -374,9 +398,6 @@ export const Utils = {
         return num.toString();
     },
 
-    /**
-     * Deep clone object
-     */
     deepClone(obj) {
         if (obj === null || typeof obj !== 'object') return obj;
         if (obj instanceof Date) return new Date(obj.getTime());
@@ -392,9 +413,6 @@ export const Utils = {
         }
     },
 
-    /**
-     * Safe JSON parse with fallback
-     */
     safeJsonParse(str, fallback = null) {
         try {
             return JSON.parse(str);
@@ -404,9 +422,6 @@ export const Utils = {
         }
     },
 
-    /**
-     * Safe JSON stringify
-     */
     safeJsonStringify(obj, fallback = '{}') {
         try {
             return JSON.stringify(obj);
@@ -416,9 +431,6 @@ export const Utils = {
         }
     },
 
-    /**
-     * Generate unique ID
-     */
     generateId() {
         return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }

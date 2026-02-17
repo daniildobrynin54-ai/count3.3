@@ -1,4 +1,4 @@
-// Popup script для управления расширением v3.2.1 (Fixed + Simplified Wishlist)
+// Popup script для управления расширением v3.3 (Fixed + Simplified Wishlist)
 document.addEventListener('DOMContentLoaded', async () => {
     const statsDiv = document.getElementById('stats');
     const rateLimitBox = document.getElementById('rateLimitBox');
@@ -40,14 +40,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function sendMessage(action, data = {}) {
         const tab = await getCurrentTab();
         if (!tab || !tab.id || !tab.url?.includes('mangabuff.ru')) {
-            // Не отправляем сообщения на страницы, которые не являются mangabuff.ru
             return null;
         }
         
         return new Promise((resolve) => {
             chrome.tabs.sendMessage(tab.id, { action, ...data }, (response) => {
                 if (chrome.runtime.lastError) {
-                    // Игнорируем ошибки, так как страница может быть не готова
                     resolve(null);
                 } else {
                     resolve(response);
@@ -118,7 +116,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
 
-        // Update toggle state
         updateWishlistToggleUI(stats.enabled);
     }
 
@@ -128,24 +125,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // ALL page types including new history pages
         const pageTypeLabels = {
-            packOpening: '🎴 Открытие паков',
-            marketLots: '🏪 Маркет (главная)',
-            marketLotPage: '📦 Страница лота',
-            marketRequests: '📋 Заявки',
+            packOpening:         '🎴 Открытие паков',
+            marketLots:          '🏪 Маркет (главная)',
+            marketLotPage:       '📦 Страница лота',
+            marketRequests:      '📋 Заявки маркета',
             marketRequestCreate: '✍️ Создание заявки',
-            userCards: '👤 Карты пользователя',
-            userShowcase: '🏆 Витрина',
-            tradeCreatePages: '✨ Создание обмена',
-            tradePages: '🔄 Обмены',
-            deckPages: '📚 Колоды',
-            other: '🌐 Остальное'
+            userCards:           '👤 Карты пользователя',
+            userShowcase:        '🏆 Витрина',
+            tradeCreatePages:    '✨ Создание обмена',
+            tradePages:          '🔄 Обмены',
+            deckPages:           '📚 Колоды',
+            tradeHistory:        '📜 История обменов',
+            userMarketsHistory:  '🏷️ История лотов',
+            userMarketsRequests: '📋 История заявок',
+            other:               '🌐 Остальное'
         };
 
         pageFiltersContainer.innerHTML = '';
 
         for (const [key, label] of Object.entries(pageTypeLabels)) {
-            const isActive = filters[key];
+            // Skip if this filter key doesn't exist in the received filters object
+            // (e.g. old extension version without the new keys)
+            const isActive = filters[key] !== undefined ? filters[key] : true;
             const isCurrent = key === currentPageType;
 
             const filterItem = document.createElement('div');
@@ -179,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (response && response.success) {
                     filters[key] = newState;
                     showMessage(
-                        `${label}: ${newState ? 'включено' : 'выключено'}`,
+                        `${label}: ${newState ? 'включено ✅' : 'выключено ❌'}`,
                         'info'
                     );
                     
@@ -187,6 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         setTimeout(loadStats, 500);
                     }
                 } else {
+                    // Revert toggle on error
                     if (newState) {
                         toggleDiv.classList.remove('active');
                     } else {
@@ -237,9 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateWishlistBtn.disabled = true;
         updateWishlistBtn.innerHTML = '<span class="icon">⳿</span><span>Загрузка...</span>';
 
-        const response = await sendMessage('fetchWishlist', { 
-            url: null // Используем URL по умолчанию из конфига
-        });
+        const response = await sendMessage('fetchWishlist', { url: null });
 
         if (response && response.success) {
             showMessage(`✅ Wishlist обновлен: ${response.count} карт`);
