@@ -121,10 +121,13 @@ export const DOMUtils = {
         if (!cardElem) return null;
 
         // ===== FIX: Special handling for trade__main-item =====
-        // These elements have data-id = instance ID, not card definition ID.
-        // We must look up the matching card in the inventory list to get data-card-id.
+        // Try trade-specific resolution first, but fall through to standard
+        // extraction if it fails (e.g. on view-only trade pages where <a>
+        // elements have a href but no data-id attribute).
         if (cardElem.classList.contains('trade__main-item')) {
-            return this._getTradeMainItemCardId(cardElem);
+            const tradeCardId = this._getTradeMainItemCardId(cardElem);
+            if (tradeCardId) return tradeCardId;
+            // Fall through to standard extraction below
         }
 
         // Special handling for requests page
@@ -150,20 +153,33 @@ export const DOMUtils = {
     /**
      * FIX: Resolve card ID for .trade__main-item elements.
      *
-     * The element has data-id = instance ID (e.g. 427371796).
-     * We need to find the matching .card-filter-list__card[data-id="..."]
-     * in the inventory panel and read its data-card-id attribute.
+     * On trade-CREATION pages the element has data-id = instance ID and we
+     * must look up the matching inventory card.
+     *
+     * On trade-VIEW pages (/trades/<id>) the element is an <a> tag whose href
+     * already contains /cards/<id>/users — we just extract it directly.
      *
      * Fallback chain:
-     *   1. Look up inventory card by instance ID → data-card-id
-     *   2. Try data-card-id directly on the element
-     *   3. Try img src pattern (last resort, unreliable)
+     *   1. href on the <a> element itself  ← NEW (covers view pages)
+     *   2. Inventory card lookup via data-id → data-card-id  ← trade creation
+     *   3. data-card-id directly on element
+     *   4. data-id on child .lock-card-btn  ← NEW fallback
      */
     _getTradeMainItemCardId(cardElem) {
-        const instanceId = cardElem.getAttribute('data-id');
+        // 1. BEST: href directly on the element (view-only trade pages)
+        //    e.g. <a href="/cards/243465/users" class="trade__main-item">
+        if (cardElem.tagName === 'A' && cardElem.href) {
+            const match = cardElem.href.match(/\/cards\/(\d+)\/users/);
+            if (match) {
+                Logger.info(`trade__main-item: card-id ${match[1]} (from href)`);
+                return match[1];
+            }
+        }
 
+        // 2. Trade-creation pages: data-id on the element = instance ID,
+        //    look it up in the inventory panel to get the real card-id.
+        const instanceId = cardElem.getAttribute('data-id');
         if (instanceId) {
-            // 1. Search in both inventory panels (creator + receiver)
             const inventoryCard = document.querySelector(
                 `.card-filter-list__card[data-id="${instanceId}"]`
             );
@@ -175,7 +191,7 @@ export const DOMUtils = {
                 }
             }
 
-            // 2. Maybe the element itself already has data-card-id (rare case)
+            // 3. Maybe the element itself has data-card-id
             const directCardId = cardElem.getAttribute('data-card-id');
             if (directCardId) {
                 Logger.info(`trade__main-item ${instanceId} → card-id ${directCardId} (direct)`);
@@ -184,6 +200,18 @@ export const DOMUtils = {
 
             Logger.warn(`trade__main-item ${instanceId}: could not resolve to card-id. ` +
                         `Inventory card not found in DOM yet.`);
+        }
+
+        // 4. Fallback: data-id on the child .lock-card-btn is an INSTANCE id,
+        //    not a card definition id — skip it to avoid wrong lookups.
+        //    Instead try any /cards/<id> link inside the element.
+        const innerLink = cardElem.querySelector('a[href*="/cards/"]');
+        if (innerLink) {
+            const match = innerLink.href.match(/\/cards\/(\d+)/);
+            if (match) {
+                Logger.info(`trade__main-item: card-id ${match[1]} (from inner link)`);
+                return match[1];
+            }
         }
 
         return null;
