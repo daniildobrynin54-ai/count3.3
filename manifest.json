@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Mangabuff Card Stats",
+  "version": "3.3",
+  "description": "Расширение для статистики карт на Mangabuff.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://mangabuff.ru/*",
+    "https://docs.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://mangabuff.ru/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Mangabuff Card Stats v3.2 + Wishlist"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["modules/*.js"],
+      "matches": ["https://mangabuff.ru/*"]
+    }
+  ]
+}

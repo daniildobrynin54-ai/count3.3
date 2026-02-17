@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mangabuff Card Stats</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .toggle-container {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle-label {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(28px);
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .stat-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Wishlist Section */
+        .wishlist-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .wishlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .wishlist-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .wishlist-title {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .wishlist-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .wishlist-toggle.active {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+        }
+
+        .wishlist-toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .wishlist-toggle.active .wishlist-toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .wishlist-count {
+            font-size: 12px;
+            background: rgba(255, 215, 0, 0.3);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .wishlist-info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+
+        .wishlist-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wishlist-buttons button {
+            font-size: 13px;
+            padding: 10px 14px;
+        }
+
+        .rate-limit-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .rate-limit-title {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rate-limit-bar {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            height: 24px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .rate-limit-fill {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            height: 100%;
+            transition: width 0.3s ease, background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .rate-limit-fill.warning {
+            background: linear-gradient(90deg, #FF9800, #FFC107);
+        }
+
+        .rate-limit-fill.danger {
+            background: linear-gradient(90deg, #F44336, #E91E63);
+        }
+
+        .rate-limit-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .page-filters {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .page-filters-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .filter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-item:last-child {
+            border-bottom: none;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .filter-toggle.active {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+        }
+
+        .filter-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .filter-toggle.active .filter-slider {
+            transform: translateX(20px);
+        }
+
+        .current-page-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(255, 215, 0, 0.3);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            margin-left: 6px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button .icon {
+            font-size: 16px;
+        }
+
+        #clearBtn, #clearRateLimitBtn, #pruneErrorsBtn {
+            background: rgba(255, 59, 48, 0.3);
+            border-color: rgba(255, 59, 48, 0.5);
+        }
+
+        #clearBtn:hover:not(:disabled), #clearRateLimitBtn:hover:not(:disabled), 
+        #pruneErrorsBtn:hover:not(:disabled) {
+            background: rgba(255, 59, 48, 0.5);
+        }
+
+        #message {
+            margin-top: 15px;
+            min-height: 20px;
+        }
+
+        .success-message, .info-message {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        .success-message {
+            background: rgba(52, 199, 89, 0.3);
+            border: 1px solid rgba(52, 199, 89, 0.5);
+        }
+
+        .info-message {
+            background: rgba(255, 149, 0, 0.3);
+            border: 1px solid rgba(255, 149, 0, 0.5);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .status-badge.enabled {
+            background: rgba(76, 175, 80, 0.3);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .status-badge.disabled {
+            background: rgba(244, 67, 54, 0.3);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        .wishlist-disabled-overlay {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .auto-update-info {
+            font-size: 11px;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 8px;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎴 Mangabuff Stats</h1>
+            <p>Статистика карточек v3.2 + Auto Wishlist</p>
+        </div>
+        
+        <div class="toggle-container">
+            <div class="toggle-label">
+                <span id="toggleIcon">🎴</span>
+                <span>Расширение</span>
+                <span id="statusBadge" class="status-badge enabled">ВКЛ</span>
+            </div>
+            <div id="toggleSwitch" class="toggle-switch active">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+
+        <div id="stats" class="stats">
+            <div style="text-align: center; padding: 20px;">
+                <span style="font-size: 24px;">⳿</span>
+                <p style="margin-top: 10px; opacity: 0.8;">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- Wishlist Section -->
+        <div class="wishlist-section">
+            <div class="wishlist-header">
+                <div class="wishlist-title-row">
+                    <div class="wishlist-title">⭐ Wishlist</div>
+                    <div id="wishlistToggle" class="wishlist-toggle active" title="Включить/выключить отображение звездочек">
+                        <div class="wishlist-toggle-slider"></div>
+                    </div>
+                </div>
+                <div id="wishlistCount" class="wishlist-count">0 карт</div>
+            </div>
+            
+            <div id="wishlistContent">
+                <div class="wishlist-info" id="wishlistInfo">
+                    <div style="text-align: center; padding: 10px; opacity: 0.7; font-size: 12px;">
+                        Загрузка из Google таблицы...
+                    </div>
+                </div>
+
+                <div class="wishlist-buttons">
+                    <button id="updateWishlistBtn">
+                        <span class="icon">🔄</span>
+                        <span>Обновить из Google Sheets</span>
+                    </button>
+                </div>
+
+                <div class="auto-update-info">
+                    ⏰ Автообновление каждый час из Google Sheets
+                </div>
+            </div>
+        </div>
+
+        <div id="rateLimitBox" class="rate-limit-box" style="display: none;">
+            <div class="rate-limit-title">🛡️ Rate Limit</div>
+            <div class="rate-limit-bar">
+                <div id="rateLimitFill" class="rate-limit-fill" style="width: 0%;">
+                    <span id="rateLimitText">0/70</span>
+                </div>
+            </div>
+            <div class="rate-limit-info">
+                <span id="rateLimitRemaining">Осталось: 70</span>
+                <span id="rateLimitReset">Сброс через: 0с</span>
+            </div>
+        </div>
+
+        <div class="page-filters">
+            <div class="page-filters-title">🎯 Фильтры страниц</div>
+            <div id="pageFiltersContainer">
+                <div style="text-align: center; padding: 10px; opacity: 0.7;">
+                    Загрузка...
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="refreshBtn">
+                <span class="icon">🔄</span>
+                <span>Обновить карты</span>
+            </button>
+
+            <button id="exportBtn">
+                <span class="icon">📥</span>
+                <span>Экспорт кэша</span>
+            </button>
+
+            <button id="importBtn">
+                <span class="icon">📤</span>
+                <span>Импорт кэша</span>
+            </button>
+
+            <button id="pruneErrorsBtn">
+                <span class="icon">🧹</span>
+                <span>Удалить только ошибки</span>
+            </button>
+
+            <button id="clearBtn">
+                <span class="icon">🗑️</span>
+                <span>Очистить весь кэш</span>
+            </button>
+
+            <button id="clearRateLimitBtn">
+                <span class="icon">🔄</span>
+                <span>Сбросить Rate Limit</span>
+            </button>
+        </div>
+
+        <input type="file" id="fileInput" accept=".json">
+
+        <div id="message"></div>
+
+        <div class="footer">
+            v3.3 (Auto Wishlist)
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
